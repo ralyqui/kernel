@@ -1,0 +1,10 @@
+bin
+.cache
+iso_root
+obj
+compile_commands.json
+image.hdd
+image.iso
+
+limine
+third_party
