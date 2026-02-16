@@ -9,7 +9,11 @@
 #include <stdint.h>
 
 int init_serial(uint16_t port);
+
 void write_serial(uint16_t port, uint8_t data);
+void write_serial_s(uint16_t port, char* str);
+void write_serial_hex(uint16_t port, uint32_t data);
+
 uint8_t read_serial(uint16_t port);
 
 #endif

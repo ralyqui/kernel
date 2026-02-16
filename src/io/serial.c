@@ -46,7 +46,21 @@ void write_serial_s(uint16_t port, char* s) {
 
     while(*s) {
         write_serial(port, *s);
+        s++;
     }
+}
+
+void write_serial_hex(uint16_t port, uint32_t data) {
+    write_serial(port, '0');
+    write_serial(port, 'x');
+
+    for(int i = 28; i >= 0; i -= 4) {
+        uint8_t digit = data >> i & 0xf;
+
+        write_serial(port, digit >= 10 ? 'a' + digit - 10: '0' + digit);
+    }
+
+    write_serial(port, ' ');
 }
 
 static inline int data_ready(uint16_t port) {
