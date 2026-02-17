@@ -13,10 +13,11 @@ void test_serial() {
 }
 
 void test_pci() {
-    uint16_t temp = read_vendor_id();
     init_serial(COM1);
 
-    write_serial_hex(COM1, temp);
+    uint8_t bus = 0, device = 2;
+    write_serial_hex(COM1, read_device_id(bus, device));
+    write_serial_hex(COM1, read_vendor_id(bus, device));
 }
 
 void kmain(void) {
