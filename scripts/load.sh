@@ -6,6 +6,7 @@ rm image.hdd
 rm image.iso
 
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+
 bear -- make && \
 "$SCRIPT_DIR/create-iso.sh" && \
 "$SCRIPT_DIR/mbr.sh" && \

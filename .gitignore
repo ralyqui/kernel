@@ -8,3 +8,5 @@ image.iso
 
 limine
 third_party
+
+.clang-format

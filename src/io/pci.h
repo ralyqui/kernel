@@ -1,9 +1,9 @@
 #ifndef PCI_H
 #define PCI_H
 
-#include <stdint.h>
-#include <stdbool.h>
 #include <io/io.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 #define PCI_CONFIG_ADDRESS 0xCF8
 #define PCI_CONFIG_DATA 0xCFC
@@ -15,8 +15,20 @@
 #define DEVICE_ID_OFFSET 0x2
 #define HEADER_TYPE_OFFSET 0xE
 
-static inline uint16_t pci_read16(uint8_t bus, uint8_t device, uint8_t function, uint8_t reg_offset) {
-    uint32_t ca_addr = PCI_CA_ENABLE | (bus << 16) | (device << 11) | (function << 8) | (reg_offset & 0xfc);
+typedef struct {
+    uint8_t bus;
+    uint8_t slot;
+    uint8_t function;
+
+    uint16_t device_id;
+    uint16_t vendor_id;
+    uint8_t header_type;
+} pci_device_info;
+
+static inline uint16_t pci_read16(uint8_t bus, uint8_t device, uint8_t function,
+                                  uint8_t reg_offset) {
+    uint32_t ca_addr = PCI_CA_ENABLE | (bus << 16) | (device << 11) |
+                       (function << 8) | (reg_offset & 0xfc);
     out32(PCI_CONFIG_ADDRESS, ca_addr);
 
     uint32_t config_data = in32(PCI_CONFIG_DATA);
@@ -25,8 +37,10 @@ static inline uint16_t pci_read16(uint8_t bus, uint8_t device, uint8_t function,
     return (uint16_t)((config_data >> inner_offset) & 0xffff);
 }
 
-static inline uint8_t pci_read8(uint8_t bus, uint8_t device, uint8_t function, uint8_t reg_offset) {
-    uint32_t ca_addr = PCI_CA_ENABLE | (bus << 16) | (device << 11) | (function << 8) | (reg_offset & 0xfc);
+static inline uint8_t pci_read8(uint8_t bus, uint8_t device, uint8_t function,
+                                uint8_t reg_offset) {
+    uint32_t ca_addr = PCI_CA_ENABLE | (bus << 16) | (device << 11) |
+                       (function << 8) | (reg_offset & 0xfc);
     out32(PCI_CONFIG_ADDRESS, ca_addr);
 
     uint32_t config_data = in32(PCI_CONFIG_DATA);
@@ -39,16 +53,19 @@ static inline uint8_t read_header_type(uint8_t bus, uint8_t device) {
     return pci_read8(bus, device, BASIC_FUNC, HEADER_TYPE_OFFSET);
 }
 
-static inline uint16_t read_vendor_id(uint8_t bus, uint8_t device, uint8_t function) {
+static inline uint16_t read_vendor_id(uint8_t bus, uint8_t device,
+                                      uint8_t function) {
     return pci_read16(bus, device, function, VENDOR_ID_OFFSET);
 }
 
-static inline uint16_t read_device_id(uint8_t bus, uint8_t device, uint8_t function) {
+static inline uint16_t read_device_id(uint8_t bus, uint8_t device,
+                                      uint8_t function) {
     return pci_read16(bus, device, function, DEVICE_ID_OFFSET);
 }
 
-static inline bool is_multifunc(uint8_t device, uint8_t bus) {
-    return read_header_type(bus, device) & 0x80;
-}
+bool is_multifunc(pci_device_info *info);
+
+bool pci_read_slot(uint8_t bus, uint8_t slot, uint8_t func,
+                   pci_device_info *info);
 
 #endif
