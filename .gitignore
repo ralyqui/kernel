@@ -5,6 +5,7 @@ obj
 compile_commands.json
 image.hdd
 image.iso
+qemu.log
 
 limine
 third_party

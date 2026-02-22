@@ -1,6 +1,6 @@
 #include "serial.h"
-#include "io.h"
 #include "core/cpu.h"
+#include "io.h"
 #include <stdint.h>
 
 #define RT_OFF 0
@@ -34,17 +34,18 @@ static inline int is_empty_transit(uint16_t port) {
 }
 
 void write_serial(uint16_t port, uint8_t data) {
-    while(!is_empty_transit(port)) {
+    while (!is_empty_transit(port)) {
         cpu_pause();
     }
 
     out8(port, data);
 }
 
-void write_serial_s(uint16_t port, char* s) {
-    if (!s) return;
+void write_serial_s(uint16_t port, char *s) {
+    if (!s)
+        return;
 
-    while(*s) {
+    while (*s) {
         write_serial(port, *s);
         s++;
     }
@@ -54,10 +55,23 @@ void write_serial_hex(uint16_t port, uint32_t data) {
     write_serial(port, '0');
     write_serial(port, 'x');
 
-    for(int i = 28; i >= 0; i -= 4) {
+    for (int i = 28; i >= 0; i -= 4) {
         uint8_t digit = data >> i & 0xf;
 
-        write_serial(port, digit >= 10 ? 'a' + digit - 10: '0' + digit);
+        write_serial(port, digit >= 10 ? 'a' + digit - 10 : '0' + digit);
+    }
+
+    write_serial(port, ' ');
+}
+
+void write_serial_l(uint16_t port, uint64_t data) {
+    write_serial(port, '0');
+    write_serial(port, 'x');
+
+    for (int i = 60; i >= 0; i -= 4) {
+        uint8_t digit = data >> i & 0xf;
+
+        write_serial(port, digit >= 10 ? 'a' + digit - 10 : '0' + digit);
     }
 
     write_serial(port, ' ');
@@ -68,7 +82,7 @@ static inline int data_ready(uint16_t port) {
 }
 
 uint8_t read_serial(uint16_t port) {
-    while(!data_ready(port)) {
+    while (!data_ready(port)) {
         cpu_pause();
     }
 
