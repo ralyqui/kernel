@@ -1,11 +1,12 @@
 #include "mem.h"
+#include "core/fmt.h"
 #include <limine.h>
 #include <stdint.h>
 
 __attribute((
     used,
-    section(".limine_requests"))) static volatile struct limine_hhdm_request
-    hhdm_request = {.id = LIMINE_HHDM_REQUEST_ID, .revision = 4};
+    section(".limine_requests"))) static volatile struct limine_memmap_request
+    memmap_reqeust = {.id = LIMINE_MEMMAP_REQUEST_ID, .revision = 4};
 
 void *memcpy(void *restrict dest, const void *restrict src, size_t n) {
     uint8_t *restrict pdest = (uint8_t *restrict)dest;
@@ -61,20 +62,30 @@ int memcmp(const void *s1, const void *s2, size_t n) {
 static volatile void *mem_start = NULL;
 static volatile void *mem_end = NULL;
 
-static inline void mem_init() {
-    struct limine_hhdm_response *hhdm_response = hhdm_request.response;
-    mem_start = (void *)hhdm_response->offset;
-    mem_end = mem_start + 0xffffffff;
-}
+// static inline void mem_init() {
+//     struct limine_hhdm_response *hhdm_response = hhdm_request.response;
+//     mem_start = (void *)hhdm_response->offset + 0x10000;
+//     mem_end = mem_start + 0xffffffff;
+// }
 
 __attribute((malloc)) void *kmalloc(uint32_t size) {
-    if (mem_start == NULL)
-        mem_init();
+    return NULL;
+
+    // if (mem_start == NULL)
+    //     mem_init();
 
     if (mem_start + size > mem_end)
         return NULL;
 
-    volatile void *restrict alloc_block = mem_start;
+    // struct limine_memmap_response *memmap_response = memmap_reqeust.response;
+    // for (uint64_t i = 0; i < memmap_response->entry_count; i++) {
+    //     print_f("Memory map #%l, base: %l, length: %l, type: %l\n", i,
+    //             memmap_response->entries[i]->base,
+    //             memmap_response->entries[i]->length,
+    //             memmap_response->entries[i]->type);
+    // }
+
+    volatile void *alloc_block = mem_start;
     mem_start += size;
 
     return alloc_block;

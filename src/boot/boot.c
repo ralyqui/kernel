@@ -16,6 +16,15 @@ __attribute__((used,
 __attribute__((used, section(".limine_requests_end"))) static volatile uint64_t
     limine_requests_end_marker[] = LIMINE_REQUESTS_END_MARKER;
 
+__attribute((
+    used,
+    section(".limine_requests"))) static volatile struct limine_hhdm_request
+    hhdm_request = {.id = LIMINE_HHDM_REQUEST_ID, .revision = 4};
+
+volatile uint64_t lm_hhdm_offset;
+volatile uint64_t lm_kernel_phys;
+volatile uint64_t lm_kernel_virt;
+
 static void hcf(void) {
     for (;;) {
         cpu_halt();
@@ -26,4 +35,8 @@ void boot(void) {
     if (LIMINE_BASE_REVISION_SUPPORTED(limine_base_revision) == false) {
         hcf();
     }
+
+    lm_hhdm_offset = hhdm_request.response->offset;
+    lm_kernel_phys = address_request.response->physical_base;
+    lm_kernel_virt = address_request.response->virtual_base;
 }

@@ -2,7 +2,15 @@
 #include "core/cpu.h"
 #include "core/fmt.h"
 #include "core/mem.h"
+#include "core/paging.h"
 #include "graphics/framebuffer.h"
+#include "limine.h"
+
+__attribute__((
+    used,
+    section(
+        ".limine_requests"))) static volatile struct limine_paging_mode_request
+    pm_request = {.id = LIMINE_PAGING_MODE_REQUEST_ID, .revision = 0};
 
 struct test {
     uint32_t a;
@@ -13,15 +21,10 @@ struct test {
 void kmain(void) {
     boot();
     draw();
-
-    struct test *t = kmalloc(sizeof(struct test));
-    t->a = 0x11;
-    t->c = 'a';
-    t->b = 0x101;
-
-    print_f("alloc virt %l\n", (uint64_t)t);
-    print_f("t struct - %l %l %l", &t->a, &t->c, &t->b);
-    // test_pci();
+    // setup_paging();
+    // print_l((uint64_t)&page_directory);
+    pml4_init();
+    // struct test *t = kmalloc(sizeof(struct test));
 
     for (;;) {
         cpu_halt();
