@@ -3,6 +3,7 @@
 #include "core/fmt.h"
 #include "core/mem.h"
 #include "core/paging.h"
+#include "core/pmm.h"
 #include "graphics/framebuffer.h"
 #include "limine.h"
 
@@ -17,14 +18,17 @@ struct test {
     char c;
     uint32_t b;
 } __attribute((packed));
+extern volatile uint64_t lm_kernel_virt;
 
 void kmain(void) {
     boot();
     draw();
-    // setup_paging();
-    // print_l((uint64_t)&page_directory);
+
+    pmm_init();
     pml4_init();
-    // struct test *t = kmalloc(sizeof(struct test));
+
+    print_f("rsp virtual: %l", get_rsp());
+    print_f("kernel virtual: %l", lm_kernel_virt);
 
     for (;;) {
         cpu_halt();
