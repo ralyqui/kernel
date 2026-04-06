@@ -16,6 +16,8 @@
 #define PDE_MAX (1 << 21)
 #define PDPT_MAX (1 << 30)
 
+#define HHDM_PDPT_SIZE 4
+
 extern volatile uint64_t lm_hhdm_offset;
 extern volatile uint64_t lm_kernel_phys;
 extern volatile uint64_t lm_kernel_virt;
@@ -108,12 +110,7 @@ typedef union {
     uint64_t raw;
 } _pte;
 
-volatile static _pml4e pml4[PMTE] __attribute__((aligned(4096)));
-volatile static _pdpte pdpt[PMTE] __attribute__((aligned(4096)));
-volatile static _pde page_dir[PMTE] __attribute__((aligned(4096)));
-volatile static _pte page_table[PMTE] __attribute__((aligned(4096)));
-
-inline void zero_init_page(volatile void *p) {
+static inline void zero_init_page(volatile void *p) {
     uint64_t *page = (uint64_t *)p;
     unsigned int i;
 
@@ -122,11 +119,9 @@ inline void zero_init_page(volatile void *p) {
     }
 }
 
-void _kernel_init_paging(uint64_t kernel_phys_addr, uint64_t kernel_virt_addr) {
-    uint64_t pml4_phys_addr = pmm_alloc(PMTE * sizeof(_pml4e));
-    volatile _pdpte *master_pml4 = (_pdpte *)(pml4_phys_addr + lm_hhdm_offset);
-    zero_init_page(master_pml4);
-
+static inline void _kernel_init_paging(uint64_t kernel_phys_addr,
+                                       uint64_t kernel_virt_addr,
+                                       volatile _pml4e *pml4) {
     uint64_t pdpt_phys_addr = pmm_alloc(PMTE * sizeof(_pdpte));
     volatile _pdpte *master_pdpt = (_pdpte *)(pdpt_phys_addr + lm_hhdm_offset);
     zero_init_page(master_pdpt);
@@ -134,6 +129,8 @@ void _kernel_init_paging(uint64_t kernel_phys_addr, uint64_t kernel_virt_addr) {
     uint64_t pd_phys_addr = pmm_alloc(PMTE * sizeof(_pde));
     volatile _pde *kernel_pde = (_pde *)(pd_phys_addr + lm_hhdm_offset);
     zero_init_page(kernel_pde);
+    master_pdpt[0].present = 1;
+    master_pdpt[0].rw_allow = 1;
     master_pdpt[0].physical_address = pd_phys_addr >> 12;
 
     unsigned int j, k;
@@ -146,7 +143,6 @@ void _kernel_init_paging(uint64_t kernel_phys_addr, uint64_t kernel_virt_addr) {
         kernel_pde[j].physical_address = pt_phys_addr >> 12;
         zero_init_page(kernel_pte);
         for (k = 0; k < PMTE; k++) {
-            kernel_pte[k] = (_pte){0};
             kernel_pte[k].present = 1;
             kernel_pte[k].rw_allow = 1;
             kernel_pte[k].physical_address =
@@ -154,29 +150,42 @@ void _kernel_init_paging(uint64_t kernel_phys_addr, uint64_t kernel_virt_addr) {
         }
     }
 
-    master_pml4[PML4_IDX(kernel_virt_addr)].present = 1;
-    master_pml4[PML4_IDX(kernel_virt_addr)].rw_allow = 1;
-    master_pml4[PML4_IDX(kernel_virt_addr)].physical_address =
-        pdpt_phys_addr >> 12;
+    pml4[PML4_IDX(kernel_virt_addr)].present = 1;
+    pml4[PML4_IDX(kernel_virt_addr)].rw_allow = 1;
+    pml4[PML4_IDX(kernel_virt_addr)].pdpt_addr = pdpt_phys_addr >> 12;
 }
 
-void pml4_init() { _kernel_init_paging(lm_kernel_phys, lm_kernel_virt); }
+static inline void _hhdm_init_paging(volatile _pml4e *pml4, uint64_t virt_start,
+                                     uint64_t phys_start) {
+    uint64_t pdpt_phys_addr = pmm_alloc(PMTE * sizeof(_pdpte));
+    volatile _pdpte *hhdm_pdpt = (_pdpte *)(pdpt_phys_addr + lm_hhdm_offset);
+    zero_init_page(hhdm_pdpt);
 
-volatile static uint64_t page_directory[512] __attribute__((aligned(4096)));
-
-static inline void setup_paging() {
     unsigned int i;
-    for (i = 0; i < 1024; i++) {
-        page_directory[i] = 0x00000002;
+
+    for (i = 0; i < HHDM_PDPT_SIZE; i++) {
+        hhdm_pdpt[i].present = 1;
+        hhdm_pdpt[i].rw_allow = 1;
+        hhdm_pdpt[i].page_size = 1;
+        hhdm_pdpt[i].physical_address = (phys_start + PDPT_MAX * i) >> 12;
+
+        print_f("Page %l points to %l\n", i, (phys_start + PDPT_MAX * i));
     }
 
-    uint64_t first_page_table[1024] __attribute__((aligned(4096)));
+    pml4[PML4_IDX(virt_start)].present = 1;
+    pml4[PML4_IDX(virt_start)].rw_allow = 1;
+    pml4[PML4_IDX(virt_start)].pdpt_addr = pdpt_phys_addr >> 12;
+}
 
-    for (i = 0; i < 512; i++) {
-        first_page_table[i] = (i * 0x1000) | 3;
-    }
+static inline void pml4_init() {
+    uint64_t pml4_phys_addr = pmm_alloc(PMTE * sizeof(_pml4e));
+    volatile _pml4e *pml4 = (_pml4e *)(pml4_phys_addr + lm_hhdm_offset);
+    zero_init_page(pml4);
 
-    page_directory[0] = ((uint64_t)first_page_table) | 3;
-};
+    _kernel_init_paging(lm_kernel_phys, lm_kernel_virt, pml4);
+    _hhdm_init_paging(pml4, lm_hhdm_offset, 0x0);
+
+    __asm__ volatile("mov cr3, %0" : : "r"(pml4_phys_addr) : "memory");
+}
 
 #endif
