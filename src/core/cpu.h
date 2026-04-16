@@ -14,4 +14,10 @@ static inline uint64_t get_rsp(void) {
     return rsp;
 }
 
+static inline uint64_t get_rip(void) {
+    uint64_t rip;
+    asm("lea %0, [rip]" : "=r"(rip));
+    return rip;
+}
+
 #endif

@@ -1,8 +1,10 @@
 #ifndef PAGING_H
 #define PAGING_H
 
+#include "core/cpu.h"
 #include "core/pmm.h"
 #include <core/fmt.h>
+#include <debug/mem.h>
 #include <limine.h>
 #include <stdint.h>
 
@@ -54,9 +56,7 @@ typedef union {
         uint64_t global : 1;
         uint64_t _ignored2 : 2;
         uint64_t hlat_restart : 1;
-        uint64_t memory_type : 1;
-        uint64_t reserved : 17;
-        uint64_t physical_address : 22;
+        uint64_t physical_address : 40;
         uint64_t _ignored3 : 7;
         uint64_t protection_key : 4;
         uint64_t execute_disable : 1;
@@ -77,9 +77,7 @@ typedef union {
         uint64_t global : 1;
         uint64_t _ignored2 : 2;
         uint64_t hlat_restart : 1;
-        uint64_t memory_type : 1;
-        uint64_t reserved : 17;
-        uint64_t physical_address : 22;
+        uint64_t physical_address : 40;
         uint64_t _ignored3 : 7;
         uint64_t protection_key : 4;
         uint64_t execute_disable : 1;
@@ -100,9 +98,7 @@ typedef union {
         uint64_t global : 1;
         uint64_t _ignored2 : 2;
         uint64_t hlat_restart : 1;
-        uint64_t memory_type : 1;
-        uint64_t reserved : 17;
-        uint64_t physical_address : 22;
+        uint64_t physical_address : 40;
         uint64_t _ignored3 : 7;
         uint64_t protection_key : 4;
         uint64_t execute_disable : 1;
@@ -129,9 +125,15 @@ static inline void _kernel_init_paging(uint64_t kernel_phys_addr,
     uint64_t pd_phys_addr = pmm_alloc(PMTE * sizeof(_pde));
     volatile _pde *kernel_pde = (_pde *)(pd_phys_addr + lm_hhdm_offset);
     zero_init_page(kernel_pde);
-    master_pdpt[0].present = 1;
-    master_pdpt[0].rw_allow = 1;
-    master_pdpt[0].physical_address = pd_phys_addr >> 12;
+    master_pdpt[PDPT_IDX(kernel_virt_addr)].present = 1;
+    master_pdpt[PDPT_IDX(kernel_virt_addr)].rw_allow = 1;
+    print_f("pdpt entry is %l\n", master_pdpt[PDPT_IDX(kernel_virt_addr)]);
+    print_f("pd phys addr: %l\n", pd_phys_addr >> 12);
+
+    master_pdpt[PDPT_IDX(kernel_virt_addr)].physical_address =
+        pd_phys_addr >> 12;
+
+    print_f("pdpt entry is %l \n", master_pdpt[PDPT_IDX(kernel_virt_addr)]);
 
     unsigned int j, k;
     for (j = 0; j < PMTE; j++) {
@@ -139,14 +141,14 @@ static inline void _kernel_init_paging(uint64_t kernel_phys_addr,
         volatile _pte *kernel_pte = (_pte *)(pt_phys_addr + lm_hhdm_offset);
         kernel_pde[j].present = 1;
         kernel_pde[j].rw_allow = 1;
-
         kernel_pde[j].physical_address = pt_phys_addr >> 12;
+
         zero_init_page(kernel_pte);
         for (k = 0; k < PMTE; k++) {
             kernel_pte[k].present = 1;
             kernel_pte[k].rw_allow = 1;
             kernel_pte[k].physical_address =
-                kernel_phys_addr + PDE_MAX * j + PTE_MAX * k;
+                (kernel_phys_addr + PDE_MAX * j + PTE_MAX * k) >> 12;
         }
     }
 
@@ -172,6 +174,10 @@ static inline void _hhdm_init_paging(volatile _pml4e *pml4, uint64_t virt_start,
         print_f("Page %l points to %l\n", i, (phys_start + PDPT_MAX * i));
     }
 
+    print_f("virt_start: %l\n", virt_start);
+    print_f("shift is %l\n", (0xffff800007fabfa0 >> 30) & 0x1ff);
+    print_f("pdpt: %l\n", hhdm_pdpt[PDPT_IDX(0xffff800007fabfa0)].present);
+
     pml4[PML4_IDX(virt_start)].present = 1;
     pml4[PML4_IDX(virt_start)].rw_allow = 1;
     pml4[PML4_IDX(virt_start)].pdpt_addr = pdpt_phys_addr >> 12;
@@ -185,7 +191,15 @@ static inline void pml4_init() {
     _kernel_init_paging(lm_kernel_phys, lm_kernel_virt, pml4);
     _hhdm_init_paging(pml4, lm_hhdm_offset, 0x0);
 
+    print_f("Switching cr3 to %l\n", pml4_phys_addr);
+    print_f("rip pml4idx: %l\n", PML4_IDX(get_rip()));
+    print_f("RSP: %l", get_rsp());
+    print_f("RIP: %l", get_rip());
+
+    debug_paging((uint64_t *)pml4, get_rip());
+
     __asm__ volatile("mov cr3, %0" : : "r"(pml4_phys_addr) : "memory");
+    print_f("Working still");
 }
 
 #endif
