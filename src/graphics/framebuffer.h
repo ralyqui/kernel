@@ -2,13 +2,10 @@
 #define FRAMEBUFFER_H
 #include <limine.h>
 
-struct fb_draw_request {
-    uint64_t start_x;
-    uint64_t start_y;
-    uint64_t end_x;
-    uint64_t end_y;
-};
+volatile extern uint32_t *fb_ptr;
+extern uint64_t fb_pitch;
+extern uint64_t fb_width;
 
-void draw();
+void fb_setup();
 
 #endif

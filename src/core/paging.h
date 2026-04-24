@@ -127,13 +127,9 @@ static inline void _kernel_init_paging(uint64_t kernel_phys_addr,
     zero_init_page(kernel_pde);
     master_pdpt[PDPT_IDX(kernel_virt_addr)].present = 1;
     master_pdpt[PDPT_IDX(kernel_virt_addr)].rw_allow = 1;
-    print_f("pdpt entry is %l\n", master_pdpt[PDPT_IDX(kernel_virt_addr)]);
-    print_f("pd phys addr: %l\n", pd_phys_addr >> 12);
 
     master_pdpt[PDPT_IDX(kernel_virt_addr)].physical_address =
         pd_phys_addr >> 12;
-
-    print_f("pdpt entry is %l \n", master_pdpt[PDPT_IDX(kernel_virt_addr)]);
 
     unsigned int j, k;
     for (j = 0; j < PMTE; j++) {
@@ -170,13 +166,7 @@ static inline void _hhdm_init_paging(volatile _pml4e *pml4, uint64_t virt_start,
         hhdm_pdpt[i].rw_allow = 1;
         hhdm_pdpt[i].page_size = 1;
         hhdm_pdpt[i].physical_address = (phys_start + PDPT_MAX * i) >> 12;
-
-        print_f("Page %l points to %l\n", i, (phys_start + PDPT_MAX * i));
     }
-
-    print_f("virt_start: %l\n", virt_start);
-    print_f("shift is %l\n", (0xffff800007fabfa0 >> 30) & 0x1ff);
-    print_f("pdpt: %l\n", hhdm_pdpt[PDPT_IDX(0xffff800007fabfa0)].present);
 
     pml4[PML4_IDX(virt_start)].present = 1;
     pml4[PML4_IDX(virt_start)].rw_allow = 1;
@@ -192,14 +182,9 @@ static inline void pml4_init() {
     _hhdm_init_paging(pml4, lm_hhdm_offset, 0x0);
 
     print_f("Switching cr3 to %l\n", pml4_phys_addr);
-    print_f("rip pml4idx: %l\n", PML4_IDX(get_rip()));
-    print_f("RSP: %l", get_rsp());
-    print_f("RIP: %l", get_rip());
-
-    debug_paging((uint64_t *)pml4, get_rip());
+    // debug_paging((uint64_t *)pml4, get_rip());
 
     __asm__ volatile("mov cr3, %0" : : "r"(pml4_phys_addr) : "memory");
-    print_f("Working still");
 }
 
 #endif
