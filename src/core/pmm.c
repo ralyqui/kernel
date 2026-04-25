@@ -38,8 +38,6 @@ static bool add_block(uint64_t base, uint64_t size) {
 void pmm_init() {
     struct limine_memmap_response *memmap = memmap_reqeust.response;
 
-    print_f("mem pool entries: %l\n", memmap->entry_count);
-
     for (uint64_t i = 0; i < memmap->entry_count; i++) {
         struct limine_memmap_entry *entry = memmap->entries[i];
         if (entry->type != LIMINE_MEMMAP_USABLE ||
@@ -48,10 +46,6 @@ void pmm_init() {
 
         add_block(entry->base, entry->length);
     }
-
-    print_f("First mem block is %l with length %l\n", first->base, first->size);
-    print_f("Last mem block is %l with length %l\n", last->base, last->size);
-    print_l(pool_size);
 }
 
 uint64_t pmm_alloc(uint64_t size) {
@@ -64,6 +58,6 @@ uint64_t pmm_alloc(uint64_t size) {
         }
     }
 
-    print_s("Out of memory!");
+    print_f("Out of memory! Requested %l bytes", size);
     return 0;
 }

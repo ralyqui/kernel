@@ -13,8 +13,8 @@ typedef struct {
 extern char _binary_zap_psf_start;
 extern char _binary_zap_psf_end;
 
-void puts(char *str, uint64_t fb_x, uint64_t fb_y);
-void putc(char c, uint64_t fb_x, uint64_t fb_y);
+void kputs(char *str, uint64_t fb_x, uint64_t fb_y);
+void kputc(char c, uint64_t fb_x, uint64_t fb_y);
 
 void init_font();
 

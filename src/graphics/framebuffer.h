@@ -2,9 +2,14 @@
 #define FRAMEBUFFER_H
 #include <limine.h>
 
-volatile extern uint32_t *fb_ptr;
-extern uint64_t fb_pitch;
-extern uint64_t fb_width;
+typedef struct {
+    volatile uint32_t *ptr;
+    uint64_t pitch;
+    uint64_t width;
+    uint64_t height;
+} _fb_global_info;
+
+extern _fb_global_info *fb_global_info;
 
 void fb_setup();
 

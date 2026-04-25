@@ -1,10 +1,10 @@
 #include "boot/boot.h"
 #include "core/cpu.h"
 #include "core/fmt.h"
-#include "core/mem.h"
 #include "core/paging.h"
 #include "core/pmm.h"
 #include "graphics/framebuffer.h"
+#include "graphics/kshell.h"
 #include "limine.h"
 #include <graphics/font.h>
 
@@ -16,13 +16,14 @@ __attribute__((
 
 void kmain(void) {
     boot();
-    fb_setup();
-    init_font();
-
     pmm_init();
     pml4_init();
 
-    puts("Starting the shell..", 20, 20);
+    fb_setup();
+    init_font();
+
+    kshell_init();
+    kprint("Starting the shell");
 
     for (;;) {
         cpu_halt();

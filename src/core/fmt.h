@@ -9,4 +9,6 @@ void print_s(char *s);
 void print_hex(uint32_t i);
 void print_l(uint64_t i);
 
+char *fmt(const char *str, ...);
+
 #endif
