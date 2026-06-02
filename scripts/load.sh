@@ -13,4 +13,5 @@ bear -- make && \
 qemu-system-x86_64 -d int,cpu_reset \
     -D qemu.log \
     -no-reboot \
-    -drive format=raw,file=image.hdd -serial stdio
+    -drive format=raw,file=image.hdd -serial stdio \
+    -netdev user,id=net0 -object filter-dump,id=f1,netdev=net0,file=flight_test.pcap -device e1000,netdev=net0

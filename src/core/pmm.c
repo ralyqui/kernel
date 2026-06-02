@@ -5,6 +5,8 @@
 #define LOWEST_USABLE_ADDR 0x1000
 #define MAX_MEM_BLOCKS 1024
 
+extern volatile uint64_t lm_hhdm_offset;
+
 static mem_block mem_pool[MAX_MEM_BLOCKS];
 static uint64_t pool_size;
 
@@ -60,4 +62,8 @@ uint64_t pmm_alloc(uint64_t size) {
 
     print_f("Out of memory! Requested %l bytes", size);
     return 0;
+}
+
+void *phys_to_virt(uint64_t phys_addr) {
+    return (uint64_t *)(phys_addr + lm_hhdm_offset);
 }

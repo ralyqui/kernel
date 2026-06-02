@@ -25,6 +25,18 @@ typedef struct {
     uint8_t header_type;
 } pci_device_info;
 
+static inline uint32_t pci_read32(uint8_t bus, uint8_t device, uint8_t function,
+                                  uint8_t reg_offset) {
+    uint32_t ca_addr = PCI_CA_ENABLE | (bus << 16) | (device << 11) |
+                       (function << 8) | (reg_offset & 0xfc);
+    out32(PCI_CONFIG_ADDRESS, ca_addr);
+
+    uint32_t config_data = in32(PCI_CONFIG_DATA);
+    uint8_t inner_offset = (reg_offset & 2) * 8;
+
+    return config_data >> inner_offset;
+}
+
 static inline uint16_t pci_read16(uint8_t bus, uint8_t device, uint8_t function,
                                   uint8_t reg_offset) {
     uint32_t ca_addr = PCI_CA_ENABLE | (bus << 16) | (device << 11) |
