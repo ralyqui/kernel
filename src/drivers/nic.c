@@ -30,14 +30,22 @@ extern volatile uint64_t lm_kernel_virt;
 #define I82540EM_ASDE 0x00000020
 #define I82540EM_SLU 0x00000040
 
+#define TX_EOP 0x1
+
 typedef struct {
     uint64_t buffer_phys_;
+    uint16_t length;
+    uint8_t cso;
+    uint8_t cmd;
+    uint8_t sta;
+    uint8_t css;
+    uint16_t special;
 } __attribute__((aligned(16))) tx_descriptor;
 
 static nic_info_t _device_info;
 // static uint8_t _mac_addr[6];
-
-static void dump_packet() {}
+static tx_descriptor *_tx_ring_virt;
+static uint32_t _tx_tail = 0;
 
 static inline void write_register(uint32_t reg, uint32_t val) {
     *((volatile uint32_t *)(_device_info.mmio_base_ + reg)) = val;
@@ -47,13 +55,29 @@ static inline uint32_t read_register(uint64_t offset) {
     return *((volatile uint32_t *)(_device_info.mmio_base_ + offset));
 }
 
+static void dump_packet() {
+    tx_descriptor *desc = &_tx_ring_virt[_tx_tail];
+    uint32_t *packet_buffer = (uint32_t *)phys_to_virt(desc->buffer_phys_);
+
+    packet_buffer[0] = 0xDEADBEEF;
+    packet_buffer[1] = 0xCAFEBABE;
+
+    desc->length = 8;
+    desc->cmd = TX_EOP;
+    desc->sta = 0;
+
+    _tx_tail = (_tx_tail + 1) % NUM_TX_DESCRIPTORS;
+
+    write_register(TDT_REG, _tx_tail);
+}
+
 static void init_transmit_ring() {
     uint32_t tring_size = NUM_TX_DESCRIPTORS * DESCRIPTOR_SIZE;
     uint64_t tring_phys = pmm_alloc_128(tring_size);
-    void *tring_virt = phys_to_virt(tring_phys);
+    _tx_ring_virt = phys_to_virt(tring_phys);
 
     for (uint32_t i = 0; i < NUM_TX_DESCRIPTORS; i++) {
-        tx_descriptor *tx_desc = (tx_descriptor *)tring_virt + i;
+        tx_descriptor *tx_desc = (tx_descriptor *)_tx_ring_virt + i;
         tx_desc->buffer_phys_ = pmm_alloc_128(TX_BUFFER_SIZE);
     }
 
