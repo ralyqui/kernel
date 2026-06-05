@@ -64,6 +64,21 @@ uint64_t pmm_alloc(uint64_t size) {
     return 0;
 }
 
+uint64_t pmm_alloc_128(uint64_t size) {
+    for (uint64_t i = 0; i < pool_size; i++) {
+        uint64_t raw_base = mem_pool[i].base;
+        uint64_t aligned_base = (raw_base + 127) & ~127;
+        uint64_t padding = aligned_base - raw_base;
+
+        if (mem_pool[i].size >= (padding + size)) {
+            mem_pool[i].base = aligned_base + size;
+            mem_pool[i].size -= (padding + size);
+            return aligned_base;
+        }
+    }
+    return 0;
+}
+
 void *phys_to_virt(uint64_t phys_addr) {
     return (uint64_t *)(phys_addr + lm_hhdm_offset);
 }

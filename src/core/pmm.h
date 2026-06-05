@@ -12,6 +12,7 @@ typedef struct mem_block {
 } mem_block;
 
 uint64_t pmm_alloc(uint64_t size);
+uint64_t pmm_alloc_128(uint64_t size);
 void pmm_init();
 
 void *phys_to_virt(uint64_t phys_addr);
