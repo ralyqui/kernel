@@ -6,6 +6,7 @@ compile_commands.json
 image.hdd
 image.iso
 qemu.log
+flight_test.pcap
 
 limine
 third_party

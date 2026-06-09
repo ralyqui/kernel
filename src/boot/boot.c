@@ -1,3 +1,4 @@
+#include "boot/gdt.h"
 #include "core/cpu.h"
 #include <limine.h>
 #include <stdbool.h>
@@ -39,4 +40,6 @@ void boot(void) {
     lm_hhdm_offset = hhdm_request.response->offset;
     lm_kernel_phys = address_request.response->physical_base;
     lm_kernel_virt = address_request.response->virtual_base;
+
+    init_gdt();
 }

@@ -1,5 +1,5 @@
 /*
- * Intel® 82540EM polling network driver
+ * Intel® 82540EM network driver
  */
 
 #include "nic.h"
@@ -30,7 +30,7 @@ extern volatile uint64_t lm_kernel_virt;
 #define I82540EM_ASDE 0x00000020
 #define I82540EM_SLU 0x00000040
 
-#define TX_EOP 0x1
+#define TX_CMD_EOP 0x1
 
 typedef struct {
     uint64_t buffer_phys_;
@@ -63,7 +63,7 @@ static void dump_packet() {
     packet_buffer[1] = 0xCAFEBABE;
 
     desc->length = 8;
-    desc->cmd = TX_EOP;
+    desc->cmd = TX_CMD_EOP;
     desc->sta = 0;
 
     _tx_tail = (_tx_tail + 1) % NUM_TX_DESCRIPTORS;
@@ -106,7 +106,6 @@ void nic_init(uint32_t bus, uint32_t slot) {
     write_register(I82540EM_CTRL_REG, nic_ctrl_val);
 
     while (read_register(I82540EM_CTRL_REG) & I82540EM_RESET) {
-        print_f("ctrl reg is %l\n", read_register(I82540EM_CTRL_REG));
         cpu_nop();
     }
 
@@ -116,10 +115,10 @@ void nic_init(uint32_t bus, uint32_t slot) {
     write_register(I82540EM_CTRL_REG, nic_ctrl_val);
     init_transmit_ring();
 
-    print_f("device status is: %l\n", device_status);
-    print_f("mmio base is %l\n", _device_info.mmio_base_);
-    print_f("tdt is %l", read_register(TDT_REG));
-    print_f("tdh is %l", read_register(TDH_REG));
+    // print_f("device status is: %l\n", device_status);
+    // print_f("mmio base is %l\n", _device_info.mmio_base_);
+    // print_f("tdt is %l", read_register(TDT_REG));
+    // print_f("tdh is %l", read_register(TDH_REG));
 
     dump_packet();
 }
