@@ -1,5 +1,7 @@
 #include "boot/gdt.h"
+#include "boot/idt.h"
 #include "core/cpu.h"
+#include "core/paging.h"
 #include <limine.h>
 #include <stdbool.h>
 
@@ -42,4 +44,5 @@ void boot(void) {
     lm_kernel_virt = address_request.response->virtual_base;
 
     init_gdt();
+    init_idt();
 }

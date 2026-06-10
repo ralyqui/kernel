@@ -29,12 +29,14 @@
 #define SEG_CODE_EXRDCA 0x0F    // Execute/Read, conforming, accessed
 
 #define GDT_CODE_PL0                                                           \
-    SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) | SEG_LONG(1) | SEG_SIZE(1) |  \
+    SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) | SEG_LONG(1) | SEG_SIZE(0) |  \
         SEG_GRAN(1) | SEG_PRIV(0) | SEG_CODE_EXRD
+#define GDT_CODE_PL0_OFFSET 0x08
 
 #define GDT_DATA_PL0                                                           \
-    SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) | SEG_LONG(1) | SEG_SIZE(1) |  \
+    SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) | SEG_LONG(1) | SEG_SIZE(0) |  \
         SEG_GRAN(1) | SEG_PRIV(0) | SEG_DATA_RDWR
+#define GDT_DATA_PL0_OFFSET 0x10
 
 static inline uint64_t create_desc(uint32_t base, uint32_t limit,
                                    uint16_t flag) {

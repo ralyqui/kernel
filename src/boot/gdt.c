@@ -13,8 +13,8 @@ volatile struct gdtr_t gdtr_ptr;
 
 void init_gdt() {
     gdt_table[0] = create_desc(0x0, 0x0, 0x0);
-    gdt_table[1] = create_desc(0x08, 0x0, GDT_CODE_PL0);
-    gdt_table[2] = create_desc(0x10, 0x0, GDT_DATA_PL0);
+    gdt_table[1] = create_desc(GDT_CODE_PL0_OFFSET, 0x0, GDT_CODE_PL0);
+    gdt_table[2] = create_desc(GDT_DATA_PL0_OFFSET, 0x0, GDT_DATA_PL0);
 
     gdtr_ptr.limit = sizeof(gdt_table) - 1;
     gdtr_ptr.base = (uint64_t)gdt_table;
